@@ -147,8 +147,6 @@ When any of the files are found it means that this is a laravel app."
   :group 'projectile-laravel
   :type 'string)
 
-(define-obsolete-variable-alias 'projectile-laravel-verify-root-file 'projectile-laravel-verify-root-files)
-
 (defcustom projectile-laravel-custom-console-command "php artisan tinker"
   "When set it will be used instead of a preloader as the command for running console."
   :group 'projectile-laravel
@@ -1643,32 +1641,3 @@ Killing the buffer will terminate to server's process."
 (provide 'projectile-laravel)
 
 ;;; projectile-laravel.el ends here
-
-
-;; (format "php artisan make:model %s %s" (car (last args)) (substring (format "%s" (butlast args 1)) 1 -1))
-
-;; (define-infix-argument laravel-make-model:--name()
-;;   :description "Name(required)"
-;;   :class 'transient-option
-;;   :shortarg "n"
-;;   :prompt "Model Name: "
-;;   :argument "")
-
-
-;; (defun make-model(&optional args)
-;;   (interactive
-;;    (list (transient-args 'laravel-make-model)))
-;;   (message "args %s" args)
-;;   (projectile-laravel-with-root
-;;    (compile
-;;     (projectile-laravel--generate-with-completion cmd)
-;;     (message (format "php artisan mae:%s" args))
-;;     ;;(concat "php artisan mae:" (read-from-minibuffer (concat "Make " cmd ":")) args)
-;; ;;    'projectile-laravel-generate-mode))
-;;  )
-
-;;TODO
-;; (defun projectile-laravel-generate (cmd)
-;;   "Run laravel generate command."
-;;   (interactive)
-;;   (laravel-make-model))
