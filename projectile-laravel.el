@@ -87,7 +87,7 @@
   :group 'projectile-laravel
   :type '(repeat string))
 
-(defcustom projectile-laravel-component-dir "app/javascript/packs/"
+(defcustom projectile-laravel-component-dir "resources/views/components/"
   "The directory to look for javascript component files in."
   :group 'projectile-laravel
   :type 'string)
@@ -436,14 +436,16 @@ The bound variable is \"filename\"."
 (defun projectile-laravel-find-current-test ()
   "Find a test for the current resource."
   (interactive)
-  (projectile-toggle-between-implementation-and-test))
+  ;; (projectile-toggle-between-implementation-and-test)
+  (projectile-laravel-find-current-resource "tests/"
+                                            ".*\\(${singular}\\).*\\Test.php$"
+                                            'projectile-laravel-find-test))
 
 (defun projectile-laravel-find-current-migration ()
   "Find a migration for the current resource."
   (interactive)
   (projectile-laravel-find-current-resource "database/migrations/"
-                                            "[0-9]\\{14\\}.*_\\(${plural}\\|${singular}\\).*\\.php$"
-                                            ;;TODO find the regex
+                                            "[0-9|_]\\{17\\}.*_\\(${plural}\\|${singular}\\)_\\table.php$"
                                             ;; "[0-9|_]\\{17\\}.*_\\(${plural}\\|${singular}\\).*\\table.php$"
                                             'projectile-laravel-find-migration))
 
@@ -454,8 +456,7 @@ The bound variable is \"filename\"."
     ,(concat "/app/assets/javascripts/\\(?:.+/\\)?\\(.+\\)" projectile-laravel-javascript-re)
     ,(concat "/app/assets/stylesheets/\\(?:.+/\\)?\\(.+\\)" projectile-laravel-stylesheet-re)
     "/database/migrations/.*create_\\(.+\\)\\.php\\'"
-    "/test/.*/\\([a-z_]+?\\)\\(?:Controller\\)?_test\\.php\\'"
-    "/\\(?:test\\|spec\\)/\\(?:fixtures\\|factories\\|fabricators\\)/\\(.+?\\)\\(?:_fabricator\\)?\\.\\(?:yml\\|rb\\)\\'")
+    "/test/.*/\\([a-z_]+?\\)\\(?:Controller\\)?_test\\.php\\'")
   "List of regexps for extracting a resource name from a buffer file name."
   :group 'projectile-laravel
   :type '(repeat regexp))
