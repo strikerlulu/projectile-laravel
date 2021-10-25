@@ -9,61 +9,6 @@
   :prefix "projectile-laravel-"
   :group 'projectile)
 
-;; TODO from where do i scrape this keywords correctly ?
-(defcustom projectile-laravel-controller-keywords
-  '("logger" "polymorphicPath" "polymorphicUrl" "mail" "render" "attachments"
-    "default" "helper" "helperAttr" "helperMethod" "layout" "urlFor"
-    "serialize" "exempt_from_layout" "filter_parameter_logging" "hideAction"
-    "prepend_around_action" "skip_before_action" "skip_after_action" "skip_action")
-  "List of keywords to highlight for controllers."
-  :group 'projectile-laravel
-  :type '(repeat string))
-
-(defcustom projectile-laravel-migration-keywords
-  '("createTable" "changeTable" "drop_table" "renameTable" "addColumn"
-    "renameColumn" "changeColumn" "changeColumnDefault" "changeColumnNull"
-    "removeColumn" "addIndex" "removeIndex" "renameIndex" "execute"
-    "addTimestamps" "removeTimestamps" "add_foreign_key" "removeForeignKey"
-    "addReference" "removeReference" "addBelongsTo" "remove_belongs_to"
-    "transaction" "reversible" "revert" "announce")
-  "List of keywords to highlight for migrations."
-  :group 'projectile-laravel
-  :type '(repeat string))
-
-(defcustom projectile-laravel-model-keywords
-  '("defaultScope" "namedScope" "scope" "serialize" "belongsTo" "hasOne"
-    "hasMany" "hasAndBelongsToMany" "composed_of" "acceptsNestedAttributesFor"
-    "beforeCreate" "before_destroy" "before_save" "beforeUpdate" "beforeValidation"
-    "beforeValidationOnCreate" "beforeValidationOnUpdate" "afterCreate"
-    "validatesExistenceOf" "validates_uniqueness_of" "validates_with"
-    "enum" "after_create_commit" "after_update_commit" "after_destroy_commit")
-  "List of keywords to highlight for models."
-  :group 'projectile-laravel
-  :type '(repeat string))
-
-(defcustom projectile-laravel-view-keywords
-  '("action_name" "atom_feed" "audio_path" "audio_tag" "auto_discovery_link_tag"
-    "button_tag" "button_to" "button_to_function" "cache" "capture" "cdata_section"
-    "time_ago_in_words" "time_select" "time_tag" "time_zone_options_for_select"
-    "time_zone_select" "translate" "truncate" "url_field" "url_field_tag"
-    "url_for" "url_options" "video_path" "video_tag" "word_wrap")
-  "List of keywords to highlight for views."
-  :group 'projectile-laravel
-  :type '(repeat string))
-
-(defcustom projectile-laravel-active-support-keywords
-  '("alias_attribute" "with_options" "delegate")
-  "List of keywords to highlight for all `projectile-laravel-mode' buffers."
-  :group 'projectile-laravel
-  :type '(repeat string))
-
-(defvar projectile-laravel-keyword-face 'projectile-laravel-keyword-face
-  "Face name to use for keywords.")
-
-(defface projectile-laravel-keyword-face '((t :inherit 'font-lock-keyword-face))
-  "Face to be used for higlighting the laravel keywords."
-  :group 'projectile-laravel)
-
 (defcustom projectile-laravel-views-re
   (concat "\\."
           (regexp-opt '("html" "erb" "haml" "slim"
@@ -115,11 +60,6 @@
   "The list of directories to look for the stylesheet files in."
   :group 'projectile-laravel
   :type '(repeat string))
-
-(defcustom projectile-laravel-add-keywords t
-  "If not nil the laravel keywords will be font locked in the mode's bufffers."
-  :group 'projectile-laravel
-  :type 'boolean)
 
 (defcustom projectile-laravel-keymap-prefix nil
   "Keymap prefix for `projectile-laravel-mode'."
@@ -244,25 +184,6 @@ Argument DIR is the directory to which the search should be narrowed."
     (if (f-exists? (projectile-laravel-expand-root candidate))
         candidate
       (concat (f-dirname (gethash (-first-item files) choices)) choice))))
-
-(defun projectile-laravel-highlight-keywords (keywords)
-  "Highlight the passed KEYWORDS in current buffer."
-  (font-lock-add-keywords
-   nil
-   (list (list
-          (concat "\\(^\\|[^_:.@$]\\|\\.\\.\\)\\b"
-                  (regexp-opt keywords t)
-                  "\\_>")
-          (list 2 'projectile-laravel-keyword-face)))))
-
-(defun projectile-laravel-add-keywords-for-file-type ()
-  "Apply extra font lock keywords specific to models, controllers etc."
-  (cl-loop for (re keywords) in `(("Controller\\.php$"   ,projectile-laravel-controller-keywords)
-                                  ("app/Models/.+\\.php$" ,projectile-laravel-model-keywords)
-                                  ("database/migrations/.+\\.php$" ,projectile-laravel-migration-keywords))
-           do (when (and (buffer-file-name) (string-match-p re (buffer-file-name)))
-                (projectile-laravel-highlight-keywords
-                 (append keywords projectile-laravel-active-support-keywords)))))
 
 (defun projectile-laravel-dir-files (directory)
   "Wrapper around `projectile-dir-files', list the files in DIRECTORY and in its sub-directories.
@@ -1376,7 +1297,6 @@ If file does not exist and ASK in not nil it will ask user to proceed."
   :init-value nil
   :lighter " Laravel"
   (when projectile-laravel-mode
-    (and projectile-laravel-add-keywords (projectile-laravel-add-keywords-for-file-type))
     (projectile-laravel-set-assets-dirs)))
 
 ;;;###autoload

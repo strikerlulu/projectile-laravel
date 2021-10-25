@@ -20,7 +20,6 @@ With Projectile Laravel you are able to:
 - npm install
 - composer install
 - open log files with `auto-revert-mode` on
-- see laravel keywords highlighted(WIP)
 - Goto views & controller from routes/\*.php (WIP)
 
 ## Setup
@@ -57,14 +56,6 @@ Use the package as a global mode:
 ```
 
 ### Customizing
-
-#### Keywords(WIP)
-
-The mode's buffers will have the Laravel keywords highlighted. To turn it off:
-
-```emacs-lisp
-(setq projectile-laravel-add-keywords nil)
-```
 
 #### Snippets
 
