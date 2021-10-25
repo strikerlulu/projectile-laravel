@@ -384,13 +384,6 @@ The bound variable is \"filename\"."
                                             "\\(.*${plural}\\)Controller\\.php$"
                                             'projectile-laravel-find-controller))
 
-(defun projectile-laravel-find-current-serializer ()
-  "Find a serializer for the current resource."
-  (interactive)
-  (projectile-laravel-find-current-resource "app/serializers/"
-                                            "\\(.*${singular}\\)_serializer\\.php$"
-                                            'projectile-laravel-find-serializer))
-
 (defun projectile-laravel-find-current-view ()
   "Find a template for the current resource."
   (interactive)
@@ -561,100 +554,6 @@ ROOT is used to expand the relative files."
   (projectile-laravel-with-root
    (switch-to-buffer (make-comint-in-buffer "dbconsole" "dbconsole" "php" nil "artisan" "db")))
   (projectile-laravel-mode +1))
-
-(defun projectile-laravel--goto-file-at-point (f)
-  "Let name and line variables and call F."
-  (let ((name (projectile-laravel-name-at-point))
-        (line (projectile-laravel-current-line))
-        (case-fold-search nil))
-    (funcall f name line)))
-
-(defun projectile-laravel--views-goto-file-at-point (name line)
-  (cond
-   (
-    (string-match-p "view(.*)" "view('components.order-item')")
-    ;; (string-match-p "\\_<render\\_>" line)
-    (projectile-laravel-goto-template-at-point) t)
-
-   ((string-match-p "\\_<javascript_include_tag\\_>" line)
-    (projectile-laravel-goto-asset-at-point projectile-laravel-javascript-dirs) t)
-
-   ((string-match-p "\\_<stylesheet_link_tag\\_>" line)
-    (projectile-laravel-goto-asset-at-point projectile-laravel-stylesheet-dirs) t)))
-
-(defun projectile-laravel--stylesheet-goto-file-at-point (name line)
-  (cond
-   ((string-match-p "^\\s-*\\*= require .+\\s-*$" line)
-    (projectile-laravel-goto-asset-at-point projectile-laravel-stylesheet-dirs) t)
-
-   ((string-match-p "^\\s-*\\@import .+\\s-*$" line)
-    (projectile-laravel-goto-asset-at-point projectile-laravel-stylesheet-dirs) t)))
-
-(defun projectile-laravel--javascript-goto-file-at-point (name line)
-  (cond
-   ((string-match-p "^\\s-*//= require .+\\s-*$" line)
-    (projectile-laravel-goto-asset-at-point projectile-laravel-javascript-dirs) t)
-
-   ((string-match-p "^\\s-*\\#= require .+\\s-*$" line)
-    (projectile-laravel-goto-asset-at-point projectile-laravel-javascript-dirs) t)))
-
-(defun projectile-laravel--php-goto-file-at-point (name line)
-  (cond
-   ((string-match-p "\\_<require_relative\\_>" line)
-    (projectile-laravel-ff (expand-file-name (concat (thing-at-point 'filename) ".php"))) t)
-
-   ((string-match-p "\\_<require\\_>" line)
-    (projectile-laravel-goto-gem (thing-at-point 'filename)) t)
-
-   ((string-match-p "\\_<gem\\_>" line)
-    (projectile-laravel-goto-gem (thing-at-point 'filename)) t)
-
-   ((string-match-p "^[a-z]" name)
-    (projectile-laravel-find-constant (inflection-singularize-string name)) t)
-
-   ((string-match-p "^\\(::\\)?[A-Z]" name)
-    (projectile-laravel-goto-constant-at-point) t)))
-
-;;;###autoload
-(defun projectile-laravel-views-goto-file-at-point ()
-  "Try to find a view file at point.
-Will try to look for a template or partial file, and assets file."
-  (interactive)
-  (projectile-laravel--goto-file-at-point
-   'projectile-laravel--views-goto-file-at-point))
-
-;;;###autoload
-(defun projectile-laravel-stylesheet-goto-file-at-point ()
-  "Try to find stylesheet file at point."
-  (interactive)
-  (projectile-laravel--goto-file-at-point
-   'projectile-laravel--stylesheet-goto-file-at-point))
-
-;;;###autoload
-(defun projectile-laravel-javascript-goto-file-at-point ()
-  "Try to find javascript file at point."
-  (interactive)
-  (projectile-laravel--goto-file-at-point
-   'projectile-laravel--javascript-goto-file-at-point))
-
-;;;###autoload
-(defun projectile-laravel-php-goto-file-at-point ()
-  "Try to find ruby file at point."
-  (interactive)
-  (projectile-laravel--goto-file-at-point
-   'projectile-laravel--php-goto-file-at-point))
-
-;;;###autoload
-(defun projectile-laravel-goto-file-at-point ()
-  "Try to find file at point."
-  (interactive)
-  (projectile-laravel--goto-file-at-point
-   (lambda (name line)
-     (cl-loop for f in '(projectile-laravel--stylesheet-goto-file-at-point
-                         projectile-laravel--javascript-goto-file-at-point
-                         projectile-laravel--views-goto-file-at-point
-                         projectile-laravel--php-goto-file-at-point)
-              thereis (funcall f name line)))))
 
 (defun projectile-laravel-classify (name)
   "Split NAME by '/' character and classify each of the element."
@@ -1325,13 +1224,12 @@ Killing the buffer will terminate to server's process."
       ("s" projectile-laravel-find-seeder      "seeder")
       ("f" projectile-laravel-find-factory      "factory")
       ("g" projectile-laravel-find-config      "config")
-      ;; ("f" projectile-laravel-find-public-storage      "public storage")
+      ("P" projectile-laravel-find-public-storage      "public storage")
       ("w" projectile-laravel-find-component   "component")
       ("t" projectile-laravel-find-test        "test")
       ("o" projectile-laravel-find-log         "log")
       ("y" projectile-laravel-find-layout      "layout")
       ("n" projectile-laravel-find-migration   "migration")
-      ("b" projectile-laravel-find-job         "job")
       ("p" projectile-laravel-find-provider    "provider")
 
       ("M" projectile-laravel-find-current-model      "current model")
@@ -1378,8 +1276,6 @@ Killing the buffer will terminate to server's process."
       ("R" projectile-laravel-generate-rule       "rule")
       ("r" projectile-laravel-generate-resource   "resource"))
 
-    ;;TODO livewire ?
-
     (defhydra hydra-projectile-laravel (:color blue :columns 8)
       "Projectile Laravel"
       ("f" hydra-projectile-laravel-find/body "Find a resource")
@@ -1405,7 +1301,6 @@ Killing the buffer will terminate to server's process."
     (define-key map (kbd "o") 'projectile-laravel-find-log)
     (define-key map (kbd "y") 'projectile-laravel-find-layout)
     (define-key map (kbd "n") 'projectile-laravel-find-migration)
-    (define-key map (kbd "b") 'projectile-laravel-find-job)
     (define-key map (kbd "p") 'projectile-laravel-find-provider)
     (define-key map (kbd "M") 'projectile-laravel-find-current-model)
     (define-key map (kbd "V") 'projectile-laravel-find-current-view)
@@ -1464,7 +1359,6 @@ Killing the buffer will terminate to server's process."
 
 (defvar projectile-laravel-command-map
   (let ((map (make-sparse-keymap)))
-    ;;TODO
     (define-key map (kbd "f") 'projectile-laravel-find-map)
     (define-key map (kbd "g") 'projectile-laravel-mode-goto-map)
     (define-key map (kbd "j") 'projectile-laravel-generate-mode-map)
