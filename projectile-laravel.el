@@ -108,49 +108,10 @@ When any of the files are found it means that this is a laravel app."
   :group 'projectile-laravel
   :type 'string)
 
-(defcustom projectile-laravel-custom-destroy-command "php artisan down"
-  "When set it will be used instead of a preloader as the command for running destroy."
-  :group 'projectile-laravel
-  :type 'string)
-
 (defvar projectile-laravel-server-buffer-name "*projectile-laravel-server*")
 (defvar projectile-laravel-composer-install-buffer-name "*projectile-laravel-composer-install*")
 (defvar projectile-laravel-npm-install-buffer-name "*projectile-laravel-npm-install*")
 (defvar projectile-laravel-npm-watch-buffer-name "*projectile-npm-watch*")
-
-(defvar projectile-laravel-generators
-  '(("assets" (("app/assets/"
-                "app/assets/\\(?:stylesheets\\|javascripts\\)/\\(.+?\\)\\..+$")))
-    ("controller" (("app/Http/Controllers/" "app/Http/Controllers/\\(.+\\)Controller\\.php$")))
-    ("generator" (("lib/generator/" "lib/generators/\\(.+\\)$")))
-    ("helper" (("app/helpers/" "app/helpers/\\(.+\\)_helper.php$")))
-    ("integration_test" (("test/integration/" "test/integration/\\(.+\\)_test\\.php$")))
-    ("job" (("app/jobs/" "app/jobs/\\(.+\\)_job\\.php$")))
-    ("mailer" (("app/mailers/" "app/mailers/\\(.+\\)\\.php$")))
-    ("migration" (("database/migrations/" "database/migrations/[0-9]+_\\(.+\\)\\.php$")))
-    ("model" (("app/Models/" "app/Models/\\(.+\\)\\.php$")))
-    ("resource" (("app/Models/" "app/Models/\\(.+\\)\\.php$")))
-    ("scaffold" (("app/Models/" "app/Models/\\(.+\\)\\.php$")))
-    ("task" (("lib/tasks/" "lib/tasks/\\(.+\\)\\.rake$")))))
-
-(defun projectile-laravel--command (&rest cases)
-  "Check for the presence of pre-loaders and return corresponding value.
-
-CASES is a plist with props being :spring, :zeus or :vanilla.
-Each corresponds to a preloader (:vanilla means no preloader).
-If a preloader is running the value for the given prop is returned."
-  (let ((custom-command (plist-get cases :custom)))
-    (cond
-     (custom-command
-      (projectile-laravel--ensure-suffix custom-command " "))
-     ((projectile-laravel-spring-p)
-      (plist-get cases :spring))
-     ((projectile-laravel-zeus-p)
-      (plist-get cases :zeus))
-     (t
-      (plist-get cases :vanilla)))))
-
-(defalias 'projectile-laravel-with-preloader 'projectile-laravel--command)
 
 (defmacro projectile-laravel-with-root (body-form)
   "Run BODY-FORM within DEFAULT-DIRECTORY set to `projectile-laravel-root'."
@@ -252,6 +213,14 @@ The bound variable is \"filename\"."
    '(("app/Http/Controllers/" "\\(.+?\\)\\(Controller\\)?\\.php$"))
    "app/Http/Controllers/${filename}Controller.php"))
 
+(defun projectile-laravel-find-livewire ()
+  "Find a liveware component."
+  (interactive)
+  (projectile-laravel-find-resource
+   "controller: "
+   '(("app/Http/Livewire/" "\\(.+?\\)?\\.php$"))
+   "app/Http/Livewire/${filename}.php"))
+
 (defun projectile-laravel-find-view ()
   "Find a template or a partial."
   (interactive)
@@ -267,14 +236,6 @@ The bound variable is \"filename\"."
    "layout: "
    `(("resources/views/layouts/" ,(concat "\\(.+\\)" projectile-laravel-views-re)))
    "resources/views/layouts/${filename}"))
-
-(defun projectile-laravel-find-helper ()
-  "Find a helper."
-  (interactive)
-  (projectile-laravel-find-resource
-   "helper: "
-   '(("app/helpers/" "\\(.+\\)_helper\\.php$"))
-   "app/helpers/${filename}_helper.php"))
 
 (defun projectile-laravel-find-public-storage ()
   "Find a file within lib directory."
@@ -328,7 +289,6 @@ The bound variable is \"filename\"."
   (interactive)
   (projectile-laravel-find-resource "middleware: " '(("app/Http/Middleware/" "\\(.+\\)\\.php$"))))
 
-;;FIXME it collides with the command find-resource
 (defun projectile-laravel-find-model-resource ()
   "Find a resource."
   (interactive)
@@ -355,21 +315,6 @@ The bound variable is \"filename\"."
    "stylesheet: "
    (--map (list it "\\(.+\\)\\.[^.]+$") projectile-laravel-stylesheet-dirs)) )
 
-(defun projectile-laravel-find-initializer ()
-  "Find an initializer file."
-  (interactive)
-  (projectile-laravel-find-resource
-   "initializer: "
-   '(("config/initializers/" "\\(.+\\)\\.php$"))
-   "config/initializers/${filename}.php"))
-
-(defun projectile-laravel-find-webpack ()
-  "Find a webpack configuration."
-  (interactive)
-  (projectile-laravel-find-resource
-   "webpack config: "
-   '(("config/webpack/" "\\(.+\\.[^.]+\\)$"))))
-
 (defun projectile-laravel-find-locale ()
   "Find a locale file."
   (interactive)
@@ -379,29 +324,6 @@ The bound variable is \"filename\"."
       "\\(.+\\)\\.\\(?:php\\|yml\\)$"))
    "resources/lang/${filename}"))
 
-(defun projectile-laravel-find-mailer ()
-  "Find a mailer."
-  (interactive)
-  (projectile-laravel-find-resource
-   "mailer: "
-   '(("app/mailers/" "\\(.+\\)\\.php$"))
-   "app/mailer/${filename}.php"))
-
-(defun projectile-laravel-find-validator ()
-  "Find a validator."
-  (interactive)
-  (projectile-laravel-find-resource
-   "validator: "
-   '(("app/validators/" "\\(.+?\\)\\(_validator\\)?\\.php\\'"))
-   "app/validators/${filename}_validator.php"))
-
-(defun projectile-laravel-find-job ()
-  "Find a job file."
-  (interactive)
-  (projectile-laravel-find-resource
-   "job: "
-   '(("app/jobs/" "\\(.+?\\)\\(_job\\)?\\.php\\'"))
-   "app/jobs/${filename}_job.php"))
 
 (defun projectile-laravel-find-provider ()
   "Find a provider file."
@@ -439,34 +361,26 @@ The bound variable is \"filename\"."
                                             "${plural}/\\(.+\\)$"
                                             'projectile-laravel-find-view))
 
-(defun projectile-laravel-find-current-helper ()
-  "Find a helper for the current resource."
-  (interactive)
-  (projectile-laravel-find-current-resource "app/helpers/"
-                                            "\\(${plural}_helper\\)\\.php$"
-                                            'projectile-laravel-find-helper))
-
 (defun projectile-laravel-find-current-seeder ()
-  "Find a helper for the current resource."
+  "Find a seeder for the current resource."
   (interactive)
   (projectile-laravel-find-current-resource "database/seeders/"
                                             "\\(${singular}Seeder\\)\\.php$"
-                                            'projectile-laravel-find-helper))
+                                            'projectile-laravel-find-seeder))
 
 (defun projectile-laravel-find-current-factory ()
-  "Find a helper for the current resource."
+  "Find a factory for the current resource."
   (interactive)
   (projectile-laravel-find-current-resource "database/factories/"
                                             "\\(${singular}Factory\\)\\.php$"
-                                            'projectile-laravel-find-helper))
+                                            'projectile-laravel-find-factory))
 
-;;FIXME it collides with the command find-current-resource
 (defun projectile-laravel-find-current-model-resource ()
-  "Find a helper for the current resource."
+  "Find a model for the current resource."
   (interactive)
   (projectile-laravel-find-current-resource "app/Http/Resources/"
                                             "\\(${singular}Resource\\)\\.php$"
-                                            'projectile-laravel-find-helper))
+                                            'projectile-laravel-find-model))
 
 (defun projectile-laravel-find-current-javascript ()
   "Find a javascript for the current resource."
@@ -500,7 +414,6 @@ The bound variable is \"filename\"."
   `("/app/Models/\\(?:.+/\\)?\\(.+\\)\\.php\\'"
     "/app/Http/Controllers/\\(?:.+/\\)?\\(.+\\)Controller\\.php\\'"
     "/resources/views/\\(?:.+/\\)?\\([^/]+\\)/[^/]+\\'"
-    "/app/helpers/\\(?:.+/\\)?\\(.+\\)_helper\\.php\\'"
     ,(concat "/app/assets/javascripts/\\(?:.+/\\)?\\(.+\\)" projectile-laravel-javascript-re)
     ,(concat "/app/assets/stylesheets/\\(?:.+/\\)?\\(.+\\)" projectile-laravel-stylesheet-re)
     "/database/migrations/.*create_\\(.+\\)\\.php\\'"
@@ -595,7 +508,7 @@ ROOT is used to expand the relative files."
   "Return t if relative FILEPATH exists within current project."
   (file-exists-p (projectile-laravel-expand-root filepath)))
 
-(defun projectile-laravel-artisan (arg)
+(defun projectile-laravel-artisan-tinker (arg)
   "Start a laravel console, asking for which if ARG is not nil."
   (interactive "P")
   (projectile-laravel-with-root
@@ -764,18 +677,6 @@ Will try to look for a template or partial file, and assets file."
      (compile "npm run watch"
               'projectile-laravel-npm-watch-mode))))
 
-(defun projectile-laravel--completion-in-region ()
-  (interactive)
-  (let ((generators (--map (concat (car it) " ") projectile-laravel-generators)))
-    (when (<= (minibuffer-prompt-end) (point))
-      (completion-in-region (minibuffer-prompt-end) (point-max)
-                            generators))))
-
-(defun projectile-laravel--generate-with-completion (command)
-  (let ((keymap (copy-keymap minibuffer-local-map)))
-    (define-key keymap (kbd "<tab>") 'projectile-laravel--completion-in-region)
-    (concat command (read-from-minibuffer command nil keymap))))
-
 (defun laravel-make-model(&optional args)
   (interactive
    (list (transient-args 'projectile-laravel-generate-model)))
@@ -792,6 +693,15 @@ Will try to look for a template or partial file, and assets file."
     (projectile-laravel-with-root
      (compile
       (format "php artisan make:controller %s %s" options (read-from-minibuffer "Make controller:"))
+      'projectile-laravel-generate-mode))))
+
+(defun laravel-make-livewire-component(&optional args)
+  (interactive
+   (list (transient-args 'projectile-laravel-generate-controller)))
+  (let ((options (if args (substring (format "%s" args) 1 -1) "")))
+    (projectile-laravel-with-root
+     (compile
+      (format "php artisan livewire:make %s %s" options (read-from-minibuffer "Make livewire component:"))
       'projectile-laravel-generate-mode))))
 
 (defun laravel-make-migration(&optional args)
@@ -893,6 +803,18 @@ Will try to look for a template or partial file, and assets file."
    ]
   ["Actions"
    ("m" "Make Controller" laravel-make-controller )])
+
+(transient-define-prefix projectile-laravel-generate-livewire-component ()
+  "Transient for creating controller."
+  ["Options"
+   ("a" "Api" "--api")
+   ("i" "Api" "--invokable")
+   ("M" "Model name" "--model=")
+   ("p" "Generate a nested resource controller" "--parent=")
+   ("r" "resource" "--resource")
+   ]
+  ["Actions"
+   ("m" "Make Controller" laravel-make-livewire )])
 
 (transient-define-prefix projectile-laravel-generate-test ()
   "Transient for creating test."
@@ -999,35 +921,6 @@ Will try to look for a template or partial file, and assets file."
    (compile
     (format "php artisan make:middleware %s" (read-from-minibuffer "Make middleware:"))
     'projectile-laravel-generate-mode)))
-
-
-(defun projectile-laravel--destroy-read (command)
-  (let ((keymap (copy-keymap minibuffer-local-map)))
-    (define-key keymap (kbd "<tab>") 'exit-minibuffer)
-    (read-from-minibuffer command nil keymap)))
-
-(defun projectile-laravel--destroy-with-completion (command)
-  (let* ((user-input (projectile-laravel--destroy-read command))
-         (completion (try-completion user-input
-                                     projectile-laravel-generators))
-         (dirs (cdr (-flatten-n 2 (--filter (string= completion (car it))
-                                            projectile-laravel-generators))))
-         (prompt (concat command completion " ")))
-    (if completion
-        (concat prompt
-                (projectile-completing-read
-                 prompt
-                 (projectile-laravel-hash-keys (projectile-laravel-choices dirs))))
-      (concat command user-input))))
-
-;;TODO delete server and npm stuff or call this terminate ?
-(defun projectile-laravel-destroy ()
-  "Run laravel destroy command."
-  (interactive)
-  (projectile-laravel-with-root
-   (compile
-    (projectile-laravel--destroy-with-completion projectile-laravel-custom-destroy-command)
-    'projectile-laravel-compilation-mode)))
 
 (defun projectile-laravel-sanitize-and-goto-file (dir name &optional ext)
   "Sanitize DIR, NAME and EXT then passe them to `projectile-laravel-goto-file'."
@@ -1387,7 +1280,7 @@ Killing the buffer will terminate to server's process."
       ("m" projectile-laravel-find-model       "model")
       ("v" projectile-laravel-find-view        "view")
       ("c" projectile-laravel-find-controller  "controller")
-      ;; ("h" projectile-laravel-find-helper      "helper")
+      ("l" projectile-laravel-find-livewire  "livewire")
       ("j" projectile-laravel-find-javascript  "javascript")
       ("a" projectile-laravel-find-middleware  "middleware")
       ("r" projectile-laravel-find-resource    "resource")
@@ -1396,11 +1289,8 @@ Killing the buffer will terminate to server's process."
       ("g" projectile-laravel-find-config      "config")
       ;; ("f" projectile-laravel-find-public-storage      "public storage")
       ("w" projectile-laravel-find-component   "component")
-      ;; ("s" projectile-laravel-find-stylesheet  "stylesheet")
-      ;; ("u" projectile-laravel-find-fixture     "fixture")
       ("t" projectile-laravel-find-test        "test")
       ("o" projectile-laravel-find-log         "log")
-      ;; ("@" projectile-laravel-find-mailer      "mailer")
       ("y" projectile-laravel-find-layout      "layout")
       ("n" projectile-laravel-find-migration   "migration")
       ("b" projectile-laravel-find-job         "job")
@@ -1411,7 +1301,6 @@ Killing the buffer will terminate to server's process."
       ("C" projectile-laravel-find-current-controller "current controller")
       ("S" projectile-laravel-find-current-seeder     "current seeder")
       ("F" projectile-laravel-find-current-factory    "current factory")
-      ;; ("H" projectile-laravel-find-current-helper     "current helper")
       ;; ("J" projectile-laravel-find-current-javascript "current javascript")
       ;; ("S" projectile-laravel-find-current-stylesheet "current stylesheet")
       ("T" projectile-laravel-find-current-test       "current test")
@@ -1428,15 +1317,14 @@ Killing the buffer will terminate to server's process."
 
     (defhydra hydra-projectile-laravel-run (:color blue :columns 8)
       "Run external command & interact"
-      ("a" projectile-laravel-artisan    "artisan")
-      ("b" projectile-laravel-dbconsole  "dbconsole")
+      ("t" projectile-laravel-artisan-tinker    "tinker")
+      ("d" projectile-laravel-dbconsole  "dbconsole")
       ("s" projectile-laravel-server     "server")
       ("i" projectile-laravel-composer-install     "composer install")
       ("I" projectile-laravel-npm-install     "npm install")
       ("w" projectile-laravel-npm-watch          "npm watch")
       ("g" hydra-projectile-laravel-generate/body   "generate")
-      ("m" projectile-laravel-migrate "migrate")
-      ("d" projectile-laravel-destroy    "destroy"))
+      ("m" projectile-laravel-migrate "migrate"))
 
     (defhydra hydra-projectile-laravel-generate (:color blue :columns 8)
       "Projectile Laravel"
@@ -1464,7 +1352,6 @@ Killing the buffer will terminate to server's process."
 
 (defvar projectile-laravel-find-map
   (let ((map (make-sparse-keymap)))
-    ;;TODO
     (define-key map (kbd "m") 'projectile-laravel-find-model)
     (define-key map (kbd "m") 'projectile-laravel-find-model)
     (define-key map (kbd "v") 'projectile-laravel-find-view)
@@ -1508,15 +1395,14 @@ Killing the buffer will terminate to server's process."
 
 (defvar projectile-laravel-mode-run-map
   (let ((map (make-sparse-keymap)))
-    (define-key map (kbd "a") 'projectile-laravel-artisan)
-    (define-key map (kbd "b") 'projectile-laravel-dbconsole)
+    (define-key map (kbd "t") 'projectile-laravel-artisan-tinker)
+    (define-key map (kbd "d") 'projectile-laravel-dbconsole)
     (define-key map (kbd "s") 'projectile-laravel-server)
     (define-key map (kbd "i") 'projectile-laravel-composer-install)
     (define-key map (kbd "I") 'projectile-laravel-npm-install)
     (define-key map (kbd "w") 'projectile-laravel-npm-watch)
     (define-key map (kbd "g") 'projectile-laravel-generate)
     (define-key map (kbd "m") 'projectile-laravel-migrate)
-    (define-key map (kbd "d") 'projectile-laravel-destroy)
     map)
   "A run map for `projectile-laravel-mode'.")
 (fset 'projectile-laravel-mode-run-map projectile-laravel-mode-run-map)
